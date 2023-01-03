@@ -1,0 +1,19 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+export TERM=xterm-256color
+source /usr/share/bash-completion/bash_completion
+source <(kubectl completion bash)
+complete -F __start_kubectl k
+export PATH=$PATH:/home/sample/kubectl-web
+source kubectl-aliases/.kubectl_aliases
+PS1="> "
+alias ll="ls -la"
