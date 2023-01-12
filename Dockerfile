@@ -9,8 +9,9 @@ FROM ubi:ubi-8
 # https://go.dev/dl/go1.19.5.linux-amd64.tar.gz
 
 # Install from Local Tar
-COPY go1.19.5.linux-amd64.tar.gz ./opt/
-RUN rm -rf /usr/local/go && tar -C /usr/local -xzf /opt/go1.19.5.linux-amd64.tar.gz
+# ADD go1.19.4.linux-amd64.tar.gz ./opt/
+RUN rm -rf /usr/local/go
+ADD go1.19.4.linux-amd64.tar.gz /usr/local
 ENV PATH="$PATH:/usr/local/go/bin"
 
 ENV CGO_ENABLED=0
@@ -19,19 +20,21 @@ ENV GO111MODULE=on
 
 WORKDIR /tmp
 COPY gotty gotty
-RUN apk add --update git make && \
-  cd gotty && \
-  make gotty && cp gotty / && ls -l /gotty && /gotty -v
+RUN cd gotty && \
+    go mod download && go build && \
+    make gotty && cp gotty / && ls -l /gotty && /gotty -v
 
 USER root
 
 # Copy from layer
 COPY --from=gotty-build /gotty /usr/bin/
 
+# apt update
+# apk add - apt install
 
 RUN ARCH=$(uname -m) && case $ARCH in aarch64) ARCH="arm64";; x86_64) ARCH="amd64";; esac && echo "ARCH: " $ARCH && \
-    apk update && apk upgrade && \
-    apk add --update --no-cache bash bash-completion curl git wget openssl iputils busybox-extras vim && \
+    yum update && ymu upgrade && \
+    yum install bash bash-completion curl git wget openssl iputils busybox-extras vim && \
     \
     sed -i "s/nobody:\//nobody:\/nonexistent/g" /etc/passwd && \
     curl -sLf https://storage.googleapis.com/kubernetes-release/release/v1.25.4/bin/linux/${ARCH}/kubectl > /usr/bin/kubectl && \
@@ -63,7 +66,8 @@ RUN ARCH=$(uname -m) && case $ARCH in aarch64) ARCH="arm64";; x86_64) ARCH="amd6
     chmod +x /usr/bin/gotty && \
     chmod 555 /bin/busybox && \
     \
-    apk del git && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* && \
+    yum remove git && \
+    # rm -rf /tmp/* /var/tmp/* /var/cache/apk/* && \
     chmod -R 755 /tmp && mkdir -p /opt/webkubectl
 
 COPY vimrc.local /etc/vim
